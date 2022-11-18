@@ -1,4 +1,8 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {Locations} from './locations.model';
+import {Pets} from './pets.model';
+import {Requests} from './requests.model';
+import {Orders} from './orders.model';
 
 @model()
 export class Users extends Entity {
@@ -86,6 +90,17 @@ export class Users extends Entity {
   })
   activationKey?: string;
 
+  @belongsTo(() => Locations)
+  locationId: string;
+
+  @hasMany(() => Pets, {keyTo: 'ownerId'})
+  pets: Pets[];
+
+  @hasMany(() => Requests, {keyTo: 'ownerId'})
+  requests: Requests[];
+
+  @hasMany(() => Orders, {keyTo: 'clientId'})
+  orders: Orders[];
 
   constructor(data?: Partial<Users>) {
     super(data);
