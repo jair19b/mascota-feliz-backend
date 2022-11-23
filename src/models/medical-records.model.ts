@@ -29,7 +29,7 @@ export class MedicalRecords extends Entity {
   sex: string;
 
   @property({
-    type: 'date',
+    type: 'string',
   })
   birthday?: string;
 

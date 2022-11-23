@@ -1,8 +1,8 @@
-import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {belongsTo, Entity, hasMany, model, property} from '@loopback/repository';
 import {Locations} from './locations.model';
+import {Orders} from './orders.model';
 import {Pets} from './pets.model';
 import {Requests} from './requests.model';
-import {Orders} from './orders.model';
 
 @model()
 export class Users extends Entity {
@@ -15,7 +15,7 @@ export class Users extends Entity {
 
   @property({
     type: 'string',
-    default: "unverified",
+    default: 'unverified',
   })
   status?: string;
 
@@ -38,7 +38,7 @@ export class Users extends Entity {
   lastName: string;
 
   @property({
-    type: 'date',
+    type: 'string',
     required: true,
   })
   birthday: string;
@@ -81,7 +81,7 @@ export class Users extends Entity {
 
   @property({
     type: 'string',
-    default: "client",
+    default: 'cliente',
   })
   rol?: string;
 

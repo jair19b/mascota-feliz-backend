@@ -1,6 +1,6 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import {Users} from './users.model';
+import {belongsTo, Entity, hasOne, model, property} from '@loopback/repository';
 import {Pets} from './pets.model';
+import {Users} from './users.model';
 
 @model()
 export class Requests extends Entity {
@@ -24,7 +24,7 @@ export class Requests extends Entity {
   address: string;
 
   @property({
-    type: 'date',
+    type: 'string',
     required: true,
   })
   date: string;

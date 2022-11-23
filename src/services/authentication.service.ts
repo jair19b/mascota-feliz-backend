@@ -3,9 +3,11 @@ import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import bcrypt from 'bcrypt';
 import sha256 from 'crypto-js/sha256';
+import {Keys as llaves} from '../config/keys';
 import {UserTokenData} from '../interfaces';
 import {Users} from './../models/users.model';
 import {UsersRepository} from './../repositories/users.repository';
+import {NotificationsService} from './notifications.service';
 import {ValidationsService} from './validations.service';
 const jwt = require('jsonwebtoken');
 
@@ -17,6 +19,8 @@ export class AuthenticationService {
   constructor(
     @service(ValidationsService)
     public validationsService: ValidationsService,
+    @service(NotificationsService)
+    public notificationService: NotificationsService,
     @repository(UsersRepository)
     public usersRepository: UsersRepository,
   ) {}
@@ -95,6 +99,10 @@ export class AuthenticationService {
     });
     newUser.password = '';
     newUser.activationKey = '';
+
+    let contenido = `Hola <strong>Bienvenido a Mascota Feliz</strong><br>Tu codigo de verificacion de la cuenta es <big><strong>${activeToken.pin}</strong></big>`;
+    this.notificationService.sendEmail(newUser.email, llaves.asuntoNewUser, contenido);
+
     return newUser;
   }
 
@@ -126,5 +134,29 @@ export class AuthenticationService {
     if (sha256(codeVerify).toString() != code.data.pin) throw new HttpErrors[400]('Código de verificación inválido');
     await this.usersRepository.updateById(user.id, {status: 'active', activationKey: ''});
     return true;
+  }
+
+  /* Recupera una contraseña */
+  async recuperarAccount(pin?: string, email?: string, password?: string) {
+    if (!pin && email) {
+      const user = await this.usersRepository.findOne({where: {email: email}});
+      if (!user) throw new HttpErrors[400]('La cuenta no existe');
+      const data = await this.setActivationKey();
+      await this.usersRepository.updateById(user!.id, {activationKey: data.token});
+      let contenido = `Codigo de recuperacion de tu cuenta es <strong>${data.pin}</strong>`;
+      this.notificationService.sendEmail(email, 'Recuperacion de la cuenta', contenido);
+      return true;
+    } else if (pin && email && password) {
+      const user = await this.usersRepository.findOne({where: {email: email}});
+      if (!user || !user.activationKey) throw new HttpErrors[400]('La cuenta no se pude reestablecer');
+
+      const code = await this.verifyToken(user.activationKey, this.jwtSignatureVerify);
+      if (!code) throw new HttpErrors[500]('Se ha agotado el tiempo para verificar tu cuenta. Crea una nueva clave de activación');
+      if (sha256(pin).toString() != code.data.pin) throw new HttpErrors[400]('Código de verificación inválido');
+      const hash = await this.encryptPassword(password);
+      await this.usersRepository.updateById(user.id, {status: 'active', activationKey: '', password: hash});
+      return true;
+    }
+    throw new HttpErrors[400]('No podemos recuparar está cuenta. Envia los datos necesarios');
   }
 }

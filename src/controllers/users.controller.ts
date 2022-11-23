@@ -42,7 +42,7 @@ export class UsersController {
     return this.usersRepository.count(where);
   }
 
-  @authenticate('Admin')
+  // @authenticate('Admin')
   @get('/users')
   @response(200, {
     description: 'Array of Users model instances',

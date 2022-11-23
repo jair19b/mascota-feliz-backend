@@ -28,7 +28,7 @@ export class Configs extends Entity {
   value: string;
 
   @property({
-    type: 'date',
+    type: 'string',
   })
   updatedAt?: string;
 

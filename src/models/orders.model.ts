@@ -1,4 +1,4 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Users} from './users.model';
 
 @model()
@@ -11,14 +11,14 @@ export class Orders extends Entity {
   id?: string;
 
   @property({
-    type: 'date',
+    type: 'string',
     required: true,
   })
   date: string;
 
   @property({
     type: 'string',
-    default: "pending",
+    default: 'pending',
   })
   state?: string;
 

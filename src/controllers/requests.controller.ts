@@ -1,29 +1,16 @@
-import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
-} from '@loopback/repository';
-import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
-  response,
-} from '@loopback/rest';
+import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} from '@loopback/repository';
+import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
+import {RequestRevision} from '../interfaces';
 import {Requests} from '../models';
 import {RequestsRepository} from '../repositories';
+import {PetsRepository} from './../repositories/pets.repository';
 
 export class RequestsController {
   constructor(
     @repository(RequestsRepository)
-    public requestsRepository : RequestsRepository,
+    public requestsRepository: RequestsRepository,
+    @repository(PetsRepository)
+    public petsRepository: PetsRepository,
   ) {}
 
   @post('/requests')
@@ -35,16 +22,39 @@ export class RequestsController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Requests, {
-            title: 'NewRequests',
-            exclude: ['id'],
-          }),
+          // schema: getModelSchemaRef(RequestRevision, {
+          //   title: 'NewRequests',
+          //   exclude: ['id'],
+          // }),
         },
       },
     })
-    requests: Omit<Requests, 'id'>,
+    requests: Omit<RequestRevision, 'id'>,
   ): Promise<Requests> {
-    return this.requestsRepository.create(requests);
+    const revisionData = {
+      city: requests.city,
+      address: requests.address,
+      date: requests.date,
+      state: 'pending',
+      details: '',
+      ownerId: requests.ownerId,
+    };
+    const revision = await this.requestsRepository.create(revisionData);
+
+    const mascotaData = {
+      id: revision.id,
+      status: 'pendiente',
+      name: requests.name,
+      age: requests.age,
+      breed: requests.breed,
+      color: requests.color,
+      photo: requests.photo,
+      description: requests.description,
+      ownerId: requests.ownerId,
+    };
+    await this.petsRepository.create(mascotaData);
+
+    return revision;
   }
 
   @get('/requests/count')
@@ -52,9 +62,7 @@ export class RequestsController {
     description: 'Requests model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Requests) where?: Where<Requests>,
-  ): Promise<Count> {
+  async count(@param.where(Requests) where?: Where<Requests>): Promise<Count> {
     return this.requestsRepository.count(where);
   }
 
@@ -70,9 +78,7 @@ export class RequestsController {
       },
     },
   })
-  async find(
-    @param.filter(Requests) filter?: Filter<Requests>,
-  ): Promise<Requests[]> {
+  async find(@param.filter(Requests) filter?: Filter<Requests>): Promise<Requests[]> {
     return this.requestsRepository.find(filter);
   }
 
@@ -106,7 +112,7 @@ export class RequestsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Requests, {exclude: 'where'}) filter?: FilterExcludingWhere<Requests>
+    @param.filter(Requests, {exclude: 'where'}) filter?: FilterExcludingWhere<Requests>,
   ): Promise<Requests> {
     return this.requestsRepository.findById(id, filter);
   }
@@ -133,10 +139,7 @@ export class RequestsController {
   @response(204, {
     description: 'Requests PUT success',
   })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() requests: Requests,
-  ): Promise<void> {
+  async replaceById(@param.path.string('id') id: string, @requestBody() requests: Requests): Promise<void> {
     await this.requestsRepository.replaceById(id, requests);
   }
 

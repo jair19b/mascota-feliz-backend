@@ -1,5 +1,5 @@
 import {service} from '@loopback/core';
-import {getModelSchemaRef, post, requestBody, response} from '@loopback/rest';
+import {getModelSchemaRef, HttpErrors, post, requestBody, response} from '@loopback/rest';
 import {UserCredential} from '../interfaces';
 import {Users} from '../models';
 import {AuthenticationService} from './../services/authentication.service';
@@ -43,7 +43,7 @@ export class AuthController {
   }
 
   /* verify account */
-  @post('/auth/veriy/account')
+  @post('/auth/verify/account')
   @response(200, {
     description: 'Data of request',
     content: {'application/json': {schema: getModelSchemaRef(Users, {exclude: []})}},
@@ -59,5 +59,30 @@ export class AuthController {
     },
   ): Promise<boolean> {
     return await this.authenticationService.verifyAccount(request.email, request.pin);
+  }
+
+  /* verificar cuenta */
+  @post('/auth/forgot-password')
+  @response(200, {
+    description: 'Cuenta verificada',
+  })
+  async recuperarCuenta(
+    @requestBody({
+      description: 'Fileds required for to verify an user account',
+      content: {'application/json': {schema: {properties: {email: {type: 'string'}, pin: {type: 'string'}, password: {type: 'string'}}}}},
+    })
+    request: {
+      email: string;
+      pin: string;
+      password: string;
+    },
+  ): Promise<boolean> {
+    if (!request.pin && !request.email && !request.password) throw new HttpErrors[400]('Envia los datos necesarios');
+    if (request.pin && request.pin.match(/^[0-9]{6}$/g)) throw new HttpErrors[400]('Pin no valido');
+    if (request.password && request.password.length < 5) throw new HttpErrors[400]('la contraseña debe tener minimo 5 caracteres');
+    const email = request.email || undefined;
+    const pin = request.pin || undefined;
+    const password = request.password || undefined;
+    return await this.authenticationService.recuperarAccount(pin, email, password);
   }
 }

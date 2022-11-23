@@ -15,9 +15,10 @@ export class AdminStrategy implements AuthenticationStrategy {
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
     let token = parseBearerToken(request);
+
     if (!token) throw new HttpErrors[401]('No estás autorizado para realizar esta acción');
 
-    const data = await this.authService.validateToken(token, 'hsjhgYvsiufsb7s9w7r6gsUY8IHVYSFS');
+    const data = await this.authService.validateToken(token);
     if (data.rol != 'admin') {
       throw new HttpErrors[401]('No estás autorizado para realizar esta acción');
     }
