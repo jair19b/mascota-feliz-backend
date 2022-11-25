@@ -85,4 +85,25 @@ export class AuthController {
     const password = request.password || undefined;
     return await this.authenticationService.recuperarAccount(pin, email, password);
   }
+
+  /* Cambia la contraseña */
+  @post('/auth/change-password')
+  @response(200, {
+    description: 'Cambio de clave',
+  })
+  async channgePassword(
+    @requestBody({
+      description: '',
+      content: {
+        'application/json': {schema: {properties: {email: {type: 'string'}, olPassword: {type: 'string'}, password: {type: 'string'}}}},
+      },
+    })
+    request: {
+      email: string;
+      oldPassword: string;
+      password: string;
+    },
+  ): Promise<UserCredential> {
+    return await this.authenticationService.updatePassword(request.email, request.oldPassword, request.password, true);
+  }
 }

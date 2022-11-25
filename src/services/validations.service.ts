@@ -62,7 +62,7 @@ export class ValidationsService {
     if (!this.validateAddress(fields.address))
       throw new HttpErrors[400]('La dirección ingresada no cumple con las carcteristicas de una dirección');
     if (!this.validateEmail(fields.email)) throw new HttpErrors[400]('Correo electrónico inválido');
-    if (fields.password.length < 8) throw new HttpErrors[400]('La contraseña debe tener mínimo 8 carácteres');
+    if (fields.password.length < 6) throw new HttpErrors[400]('La contraseña debe tener mínimo 8 carácteres');
     if (!moment(fields.birthday).isValid() || currentYear - yearTime < 18)
       throw new HttpErrors[400]('Debes ser mayor de edad para crear una cuenta');
 

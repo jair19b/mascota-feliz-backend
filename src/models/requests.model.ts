@@ -41,6 +41,12 @@ export class Requests extends Entity {
   })
   details?: string;
 
+  @property({
+    type: 'string',
+    required: false,
+  })
+  updatedAt?: string;
+
   @belongsTo(() => Users)
   ownerId: string;
 
@@ -57,6 +63,7 @@ export class Requests extends Entity {
 
 export interface RequestsRelations {
   // describe navigational properties here
+  owner: Users;
 }
 
 export type RequestsWithRelations = Requests & RequestsRelations;

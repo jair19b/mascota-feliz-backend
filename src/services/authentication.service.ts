@@ -68,9 +68,11 @@ export class AuthenticationService {
   /** Login */
   async loginUser(email: string, password: string): Promise<any> {
     const data = await this.validationsService.validateUserLogin(email, password);
-    if (data.userData.status != 'active') throw new HttpErrors[401]('Tu cuenta no está verificada por favor verificala antes de ingresar');
+    if (data.userData.status != 'active' && data.userData.status != 'inactive')
+      throw new HttpErrors[401]('Tu cuenta no está verificada por favor verificala antes de ingresar');
     const validate = await this._validatePassword(data.passwordPlaintText, data.userData.password);
     if (!validate) throw new HttpErrors[401]('Credenciales incorrectas, por favor verifiquelas e intente nuevamente');
+    if (data.userData.status == 'inactive') throw new HttpErrors[403]('Debes actulizar tus credenciales');
 
     let payload: UserTokenData = {
       name: data.userData.name,
@@ -158,5 +160,59 @@ export class AuthenticationService {
       return true;
     }
     throw new HttpErrors[400]('No podemos recuparar está cuenta. Envia los datos necesarios');
+  }
+
+  /** asignar un asesor */
+  async addAdvisor(fields: Users): Promise<Users> {
+    await this.validationsService.validAccountFields(fields);
+
+    // generar contraseña aleatoria
+    const pwa = this.randomNumbers(8);
+    const passwordHash = await this.encryptPassword(pwa);
+    console.log(pwa);
+
+    const newUser = await this.usersRepository.create({
+      ...fields,
+      rol: 'advisor',
+      password: passwordHash,
+      status: 'inactive',
+      activationKey: '',
+    });
+    newUser.password = '';
+    newUser.activationKey = '';
+
+    let contenido = `<h3 style="text-align: center;font-weight: bold;">Haz sido agregado como asesor en MascotaFeliz</h3>
+    <p>Ahora eres parte de los <b>Asesores</b> de <b>Macota Feliz</b> te enviamos las credenciales de tu cuenta</p>
+    <ul>
+      <li><strong>Correo Electronico</strong>:&nbsp;<span>${newUser.email}</span></li>
+      <li><strong>Contraseña de acceso temporal</strong>:&nbsp;<span>${pwa}</span></li>
+    </ul>`;
+    this.notificationService.sendEmail(newUser.email, llaves.asuntoNewUser, contenido);
+    return newUser;
+  }
+
+  /** atualizar contraseña */
+  async updatePassword(email: string, oldPassword: string, newPassword: string, login: boolean = false): Promise<any> {
+    const user = await this.usersRepository.findOne({where: {email: email}});
+    if (!user) throw new HttpErrors[400]('La cuenta no existe');
+
+    const psv = await this._validatePassword(oldPassword, user.password);
+    if (!psv) throw new HttpErrors[400]('La contraseña actual no es correcta');
+
+    const hash = await this.encryptPassword(newPassword);
+    this.usersRepository.updateById(user.id, {password: hash, status: 'active'});
+
+    if (login) {
+      let payload: UserTokenData = {
+        name: user.name,
+        lastName: user.lastName,
+        rol: user.rol!,
+        uid: user.id!,
+      };
+      const token = await this.generateToken(payload, 3600 * 24, this.jwtSignature);
+      return {...payload, token};
+    }
+
+    return true;
   }
 }

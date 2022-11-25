@@ -1,13 +1,17 @@
 import {authenticate} from '@loopback/authentication';
+import {service} from '@loopback/core';
 import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} from '@loopback/repository';
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
 import {Users} from '../models';
 import {UsersRepository} from '../repositories';
+import {AuthenticationService} from './../services/authentication.service';
 
 export class UsersController {
   constructor(
     @repository(UsersRepository)
     public usersRepository: UsersRepository,
+    @service(AuthenticationService)
+    public authenticationService: AuthenticationService,
   ) {}
 
   @authenticate('Admin')
@@ -29,7 +33,11 @@ export class UsersController {
     })
     users: Omit<Users, 'id'>,
   ): Promise<Users> {
-    return this.usersRepository.create(users);
+    if (users.rol == 'advisor') {
+      return this.authenticationService.addAdvisor(users);
+    } else {
+      return this.usersRepository.create(users);
+    }
   }
 
   @authenticate('Admin')
