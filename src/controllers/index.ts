@@ -8,3 +8,4 @@ export * from './pets.controller';
 export * from './orders.controller';
 export * from './medical-records.controller';
 export * from './requests.controller';
+export * from './carga-archivos.controller';
