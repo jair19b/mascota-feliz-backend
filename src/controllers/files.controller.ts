@@ -1,10 +1,10 @@
 import {inject} from '@loopback/core';
-import {HttpErrors, post, Request, requestBody, Response, response, RestBindings} from '@loopback/rest';
+import {get, HttpErrors, oas, param, post, Request, requestBody, Response, response, RestBindings} from '@loopback/rest';
 import multer from 'multer';
 import path from 'path';
 import {Keys as llaves} from '../config/keys';
 
-export class CargaArchivosController {
+export class FilesController {
   constructor() {}
 
   /* Crgar imagen de una mascota */
@@ -20,6 +20,26 @@ export class CargaArchivosController {
       if (nombreArchivo) return {filename: nombreArchivo};
     }
     return res;
+  }
+
+  @get('/pets/file/photo/{filename}')
+  @oas.response.file()
+  async downloadFile(@param.path.string('filename') filename: string, @inject(RestBindings.Http.RESPONSE) response: Response) {
+    const rutaCarpeta = this.getRutaCarpeta();
+    const archivo = this.validateNameFile(rutaCarpeta, filename);
+    response.download(archivo, rutaCarpeta);
+    return response;
+  }
+
+  private validateNameFile(archivo: string, folder: string) {
+    const resolved = path.resolve(archivo, folder);
+    if (resolved.startsWith(archivo)) return resolved;
+    throw new HttpErrors[400]('La ruta del archivo no existe');
+  }
+
+  private getRutaCarpeta() {
+    let ruta = path.join(__dirname, llaves.carpetaPetImagen);
+    return ruta;
   }
 
   private StoreFileToPath(storePath: string, fieldName: string, request: Request, response: Response, acceptedExt: string[]) {
